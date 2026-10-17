@@ -1,5 +1,6 @@
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
+import mongoose from "mongoose";
 
 //Place order COD : api/order/cod
 export const placeOrderCOD = async(req,res)=>{
@@ -61,5 +62,69 @@ export const getAllOrders= async(req,res)=>{
         res.json({success:true,orders});
     }catch(error){
         res.json({success:false , message :error.message})
+    }
+}
+
+const orderStatuses = ["Order Placed", "Processing", "Shipped", "Delivered", "Cancelled"];
+
+export const updateOrderStatus = async(req,res)=>{
+    try{
+        const { id } = req.params;
+        const { status } = req.body;
+
+        if(!mongoose.isValidObjectId(id)){
+            return res.json({success:false,message:"Invalid order ID"});
+        }
+
+        if(!orderStatuses.includes(status)){
+            return res.json({success:false,message:"Invalid order status"});
+        }
+
+        const order = await Order.findByIdAndUpdate(
+            id,
+            { status },
+            { new:true, runValidators:true }
+        );
+
+        if(!order){
+            return res.json({success:false,message:"Order not found"});
+        }
+
+        return res.json({success:true,message:"Order status updated",order});
+    }catch(error){
+        return res.json({success:false,message:error.message});
+    }
+}
+
+export const updateOrderPayment = async(req,res)=>{
+    try{
+        const { id } = req.params;
+        const { isPaid } = req.body;
+
+        if(!mongoose.isValidObjectId(id)){
+            return res.json({success:false,message:"Invalid order ID"});
+        }
+
+        if(typeof isPaid !== "boolean"){
+            return res.json({success:false,message:"Invalid payment status"});
+        }
+
+        const order = await Order.findByIdAndUpdate(
+            id,
+            { isPaid },
+            { new:true, runValidators:true }
+        );
+
+        if(!order){
+            return res.json({success:false,message:"Order not found"});
+        }
+
+        return res.json({
+            success:true,
+            message:"Payment status updated",
+            order
+        });
+    }catch(error){
+        return res.json({success:false,message:error.message});
     }
 }
